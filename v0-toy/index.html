@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>宿舍洗衣機看板</title>
+<style>
+  :root{
+    --bg: #EEF3F3;
+    --surface: #FFFFFF;
+    --ink: #16323A;
+    --ink-soft: #5B7278;
+    --line: #D7E1E1;
+    --free: #2F8F7B;
+    --free-bg: #E4F3EF;
+    --busy: #D8635A;
+    --busy-bg: #FBEAE8;
+    --almost: #C98A2C;
+    --almost-bg: #FBF1DF;
+    --offline: #93A3A8;
+    --offline-bg: #EEF1F1;
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Georgia, 'Noto Serif TC', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+    --font-mono: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding: 28px 20px 60px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ margin-bottom: 22px; }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 30px;
+    margin: 0 0 14px;
+    line-height: 1.15;
+  }
+  .hero{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .hero .count{
+    font-family: var(--font-display);
+    font-size: 56px;
+    line-height: 1;
+    color: var(--free);
+  }
+  .hero .count.zero{ color: var(--busy); }
+  .hero .of{
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+  .meta-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .meta-row button{
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .meta-row button:hover{ border-color: var(--ink-soft); }
+  .meta-row button:focus-visible, a:focus-visible{
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  @media (max-width: 560px){
+    .grid{ grid-template-columns: repeat(2, 1fr); }
+    .hero .count{ font-size: 46px; }
+  }
+
+  .card{
+    display:block;
+    text-decoration:none;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 12px 14px;
+    text-align:center;
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .card:hover{ border-color: var(--ink-soft); }
+  .card:active{ transform: scale(0.98); }
+
+  .drum{
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position: relative;
+  }
+  .drum svg{ position:absolute; inset:0; transform: rotate(-90deg); }
+  .drum .core{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .drum .core::before{
+    content:"";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .18;
+  }
+  .drum.spin .core{ animation: spin 3.2s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .drum.spin .core{ animation: none; }
+  }
+
+  .state-free .drum, .state-free .core{ color: var(--free); }
+  .state-free .drum{ background: var(--free-bg); }
+  .state-busy .drum, .state-busy .core{ color: var(--busy); }
+  .state-busy .drum{ background: var(--busy-bg); }
+  .state-almost .drum, .state-almost .core{ color: var(--almost); }
+  .state-almost .drum{ background: var(--almost-bg); }
+  .state-offline .drum, .state-offline .core{ color: var(--offline); }
+  .state-offline .drum{ background: var(--offline-bg); }
+
+  .label{
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .sub{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .name{
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  footer{
+    margin-top: 26px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  code{
+    background: var(--offline-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">載物書院 · 洗衣機看板</p>
+      <h1>現在有空的洗衣機</h1>
+      <div class="hero">
+        <span class="count" id="freeCount">–</span>
+        <span class="of">/ <span id="totalCount">–</span> 台空機</span>
+      </div>
+      <div class="meta-row">
+        <span id="updatedAt">尚未更新</span>
+        <button id="refreshBtn" type="button">立即重新整理</button>
+      </div>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <footer id="footerNote"></footer>
+  </div>
+
+<script>
+/* ============================================================
+   1) 機台清單 —— 把你們 8 台的網址填進來
+   id 就是網址最後那段像 94c96001b3e3 的代碼
+   ============================================================ */
+const MACHINES = [
+  { id: '94c96001b3e3', name: '1號機' },
+  { id: 'REPLACE_ME_2', name: '2號機' },
+  { id: 'REPLACE_ME_3', name: '3號機' },
+  { id: 'REPLACE_ME_4', name: '4號機' },
+  { id: 'REPLACE_ME_5', name: '5號機' },
+  { id: 'REPLACE_ME_6', name: '6號機' },
+  { id: 'REPLACE_ME_7', name: '7號機' },
+  { id: 'REPLACE_ME_8', name: '8號機' },
+];
+
+/* ============================================================
+   2) 開關 —— 目前是 MOCK 模式（假資料，讓畫面先能動）
+   等你抓到真正的 API 之後，把這個改成 false，
+   並且把下面 fetchRealStatus() 裡的網址跟欄位名稱換掉。
+   ============================================================ */
+const USE_MOCK = true;
+const REFRESH_MS = 20000; // 20 秒自動刷新一次
+
+const PUBLIC_PAGE_URL = (id) => `https://wipepay.com.tw/v2/machine/${id}/`;
+
+/* ------------------------------------------------------------
+   3) 這裡是真正要接 API 的地方（目前還是空的）
+
+   從瀏覽器 DevTools 的 Network 分頁找到的那支 JSON API，
+   長相可能像這樣（實際路徑要你去抓）：
+
+     GET https://wipepay.com.tw/???/api/machine/{id}
+     -> { "status": { "key": "idle" | "running" | ... },
+          "statusCode": 0,
+          "timeLeft": 1234,      // 秒
+          "name": "1號機" }
+
+   把下面這個函式改成真正的 fetch + 欄位判斷即可，
+   回傳格式維持跟 mock 版一樣：{ state, minutesLeft }
+   state 用 'free' | 'busy' | 'almost' | 'offline'
+------------------------------------------------------------ */
+async function fetchRealStatus(machine) {
+  // TODO: 網址還是空的，等你抓到真正的 status API 之後填進來
+  const res = await fetch(`https://wipepay.com.tw/__TODO__/${machine.id}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) throw new Error('bad response');
+  const data = await res.json();
+
+  // 這幾個欄位名稱是從網頁的 Vue template 反推出來的，位置應該可信：
+  const timeLeft = Number(data?.timeLeft ?? 0);       // 秒，>0 代表正在運轉
+  const statusType = data?.status?.type;              // 'success' | 'info' | 'warning' | 其他
+  // const statusKey = data?.status?.key;              // 需要時可以拿來對照，目前用不到
+
+  let state;
+  if (timeLeft > 0) {
+    // 運轉中：時間到了才會變成閒置，這段判斷應該很穩
+    state = timeLeft <= 300 ? 'almost' : 'busy';
+  } else if (statusType === 'success' || statusType === 'info') {
+    // TODO: 待確認——猜測 success/info 代表「閒置可用」
+    state = 'free';
+  } else {
+    // TODO: 待確認——猜測 warning/其他代表「故障或離線」
+    state = 'offline';
+  }
+
+  return { state, minutesLeft: Math.ceil(timeLeft / 60) };
+}
+
+// 假資料版本，純粹讓畫面先跑起來
+async function fetchMockStatus(machine) {
+  await new Promise(r => setTimeout(r, 80 + Math.random() * 200));
+  const roll = Math.random();
+  if (roll < 0.4) return { state: 'free', minutesLeft: 0 };
+  if (roll < 0.55) return { state: 'almost', minutesLeft: 1 + Math.floor(Math.random() * 5) };
+  if (roll < 0.9) return { state: 'busy', minutesLeft: 6 + Math.floor(Math.random() * 40) };
+  return { state: 'offline', minutesLeft: 0 };
+}
+
+const STATE_LABEL = {
+  free: '可用',
+  busy: '使用中',
+  almost: '快好了',
+  offline: '離線',
+};
+
+function ringSvg(pct, colorVar){
+  const r = 28, c = 2 * Math.PI * r;
+  const dash = c * Math.max(0, Math.min(1, pct));
+  return `<svg width="64" height="64" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-opacity="0.15" stroke-width="5"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-width="5"
+      stroke-dasharray="${dash} ${c}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderCard(machine, status){
+  const { state, minutesLeft } = status;
+  const label = STATE_LABEL[state];
+  const sub = state === 'busy' || state === 'almost'
+    ? `剩 ${minutesLeft} 分`
+    : (state === 'offline' ? '無回應' : '—');
+  const pct = state === 'free' ? 0 : state === 'offline' ? 0 : Math.min(1, minutesLeft / 45);
+  const spinClass = (state === 'busy' || state === 'almost') ? 'spin' : '';
+
+  const el = document.createElement('a');
+  el.className = `card state-${state}`;
+  el.href = PUBLIC_PAGE_URL(machine.id);
+  el.target = '_blank';
+  el.rel = 'noopener';
+  el.innerHTML = `
+    <div class="drum ${spinClass}">
+      ${ringSvg(pct)}
+      <div class="core"></div>
+    </div>
+    <div class="label">${label}</div>
+    <div class="sub">${sub}</div>
+    <div class="name">${machine.name}</div>
+  `;
+  return el;
+}
+
+async function refreshAll(){
+  const grid = document.getElementById('grid');
+  const fetcher = USE_MOCK ? fetchMockStatus : fetchRealStatus;
+
+  const results = await Promise.all(MACHINES.map(async (m) => {
+    try{
+      return { machine: m, status: await fetcher(m) };
+    }catch(e){
+      return { machine: m, status: { state: 'offline', minutesLeft: 0 } };
+    }
+  }));
+
+  grid.innerHTML = '';
+  results.forEach(({ machine, status }) => grid.appendChild(renderCard(machine, status)));
+
+  const freeN = results.filter(r => r.status.state === 'free').length;
+  document.getElementById('freeCount').textContent = freeN;
+  document.getElementById('freeCount').classList.toggle('zero', freeN === 0);
+  document.getElementById('totalCount').textContent = MACHINES.length;
+  document.getElementById('updatedAt').textContent =
+    '更新於 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
+}
+
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('footerNote').innerHTML = USE_MOCK
+  ? `目前顯示<strong>假資料</strong>（<code>USE_MOCK = true</code>），只是先讓畫面跑起來。<br/>接上真正的 API 後記得改成 <code>false</code>。`
+  : `每 ${REFRESH_MS/1000} 秒自動更新一次。點卡片可開啟該機台原始頁面。`;
+
+refreshAll();
+setInterval(refreshAll, REFRESH_MS);
+</script>
+</body>
+</html>

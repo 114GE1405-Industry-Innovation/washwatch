@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dorm Laundry Machine Status</title>
+<style>
+  :root{
+    --bg: #EEF3F3;
+    --surface: #FFFFFF;
+    --ink: #16323A;
+    --ink-soft: #5B7278;
+    --line: #D7E1E1;
+    --free: #2F8F7B;
+    --free-bg: #E4F3EF;
+    --busy: #D8635A;
+    --busy-bg: #FBEAE8;
+    --almost: #C98A2C;
+    --almost-bg: #FBF1DF;
+    --offline: #93A3A8;
+    --offline-bg: #EEF1F1;
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Georgia, 'Noto Serif TC', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+    --font-mono: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding: 28px 20px 60px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ margin-bottom: 22px; }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 30px;
+    margin: 0 0 14px;
+    line-height: 1.15;
+  }
+  .hero{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .hero .count{
+    font-family: var(--font-display);
+    font-size: 56px;
+    line-height: 1;
+    color: var(--free);
+  }
+  .hero .count.zero{ color: var(--busy); }
+  .hero .of{
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+  .meta-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .meta-row button{
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .meta-row button:hover{ border-color: var(--ink-soft); }
+  .meta-row button:focus-visible, a:focus-visible{
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  @media (max-width: 560px){
+    .grid{ grid-template-columns: repeat(2, 1fr); }
+    .hero .count{ font-size: 46px; }
+  }
+
+  .card{
+    display:block;
+    text-decoration:none;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 12px 14px;
+    text-align:center;
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .card:hover{ border-color: var(--ink-soft); }
+  .card:active{ transform: scale(0.98); }
+
+  .drum{
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position: relative;
+  }
+  .drum svg{ position:absolute; inset:0; transform: rotate(-90deg); }
+  .drum .core{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .drum .core::before{
+    content:"";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .18;
+  }
+  .drum.spin .core{ animation: spin 3.2s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .drum.spin .core{ animation: none; }
+  }
+
+  .state-free .drum, .state-free .core{ color: var(--free); }
+  .state-free .drum{ background: var(--free-bg); }
+  .state-busy .drum, .state-busy .core{ color: var(--busy); }
+  .state-busy .drum{ background: var(--busy-bg); }
+  .state-almost .drum, .state-almost .core{ color: var(--almost); }
+  .state-almost .drum{ background: var(--almost-bg); }
+  .state-offline .drum, .state-offline .core{ color: var(--offline); }
+  .state-offline .drum{ background: var(--offline-bg); }
+
+  .label{
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .sub{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .name{
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  footer{
+    margin-top: 26px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  code{
+    background: var(--offline-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Laundry Machine Status</h1>
+      <p class="eyebrow">Dorm Jen & Shyr</p>
+      <div class="hero">
+        <span class="count" id="freeCount">–</span>
+        <span class="of">/ <span id="totalCount">–</span> Machines Available</span>
+      </div>
+      <div class="meta-row">
+        <span id="updatedAt">Not updated yet</span>
+        <button id="refreshBtn" type="button">Refresh now</button>
+      </div>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <footer id="footerNote"></footer>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+/* ============================================================
+   1) 機台清單 —— id 就是網址最後那段代碼
+   ============================================================ */
+const MACHINES = [
+  { id: '94c96001b3e3', name: '仁齋男洗1' },
+  { id: '94c96001b3f4', name: '仁齋男洗2' },
+  { id: '94c96001b3f6', name: '仁齋男洗3' },
+  { id: '94c96001b3f5', name: '仁齋男洗4' },
+  { id: '94c96001b3ce', name: '實齋男洗1' },
+  { id: '94c96001b3c9', name: '實齋男洗2' },
+  { id: '94c96001b3c2', name: '實齋男洗3' },
+  { id: '94c96001b3cc', name: '實齋男洗4' },
+  // { id: '94c96001b39f', name: '實齋男烘1' },
+  // { id: '94c96001b396', name: '實齋男烘2' },
+  // { id: '94c96001b38b', name: '實齋男烘3' },
+];
+
+const PUBLIC_PAGE_URL = (id) => `https://wipepay.com.tw/v2/machine/${id}/`;
+
+/* ------------------------------------------------------------
+   2) 資料來源：wipepay 官方頁面用的 MQTT（WebSocket）
+     broker: wss://wipepay.com.tw:443/mqtt/
+     topic : machine/{mac}/status/#   （retained，訂閱後立即收到最新一筆）
+     payload: {"type":"status","mac":"...","status":2176,"ts":1791889679.3,
+               "timeLeft":1288,"totalTime":2193}   // timeLeft/totalTime 只有計時狀態才有
+
+   status 是 16-bit 混合碼：高位元組＝主狀態、低位元組＝子狀態（見官方 /js/machine/liveStatus.js）
+   主狀態：-1 timeout(伺服器 watchdog 發的), 0/1 閒置, 2 等待付款, 4/5 等待操作,
+           8 運轉中, 9 鎖門, 10 開門, 11 暫停, 12 完成, 128 故障
+------------------------------------------------------------ */
+const BROKER_URL = 'wss://wipepay.com.tw:443/mqtt/';
+const RETAINED_TIMEOUT_MS = 3000; // 官方 retainedTimeout=2 秒，連上後這麼久沒收到就算離線
+const HEARTBEAT_TIMEOUT_S = 15;   // 官方 heartbeat.timeout：運轉中超過這麼久沒心跳就算離線
+const RENDER_MS = 5000;
+
+const FREE_CODES = new Set([0, 1, 2, 12]);
+const BUSY_CODES = new Set([4, 5, 8, 9, 10, 11]);
+
+const statusMain = (code) => (code < 0 ? code : (code >> 8) & 0xFF);
+
+const heartbeats = {}; // mac -> 最新一筆 payload
+let connectedAt = null;
+
+function computeStatus(machine) {
+  const hb = heartbeats[machine.id];
+  if (!hb) {
+    // 還在等 retained 訊息就先顯示離線；從沒上線過的機器本來就不會有 retained 訊息
+    return { state: 'offline', minutesLeft: 0 };
+  }
+  const main = statusMain(Number(hb.status));
+  const now = Date.now() / 1000;
+
+  if (main === 8) {
+    if (now - hb.ts > HEARTBEAT_TIMEOUT_S) return { state: 'offline', minutesLeft: 0 };
+    const timeLeft = Math.max(0, (hb.timeLeft ?? 0) - (now - hb.ts));
+    if (timeLeft < 1) return { state: 'free', minutesLeft: 0 }; // 官方邏輯：倒數到 0 視為完成
+    return { state: timeLeft <= 300 ? 'almost' : 'busy', minutesLeft: Math.ceil(timeLeft / 60) };
+  }
+  if (BUSY_CODES.has(main)) {
+    // 暫停/鎖門等狀態的 timeLeft 是凍結值
+    const timeLeft = hb.timeLeft ?? 0;
+    return { state: timeLeft > 0 && timeLeft <= 300 ? 'almost' : 'busy', minutesLeft: Math.ceil(timeLeft / 60) };
+  }
+  if (FREE_CODES.has(main)) return { state: 'free', minutesLeft: 0 };
+  return { state: 'offline', minutesLeft: 0 }; // -1 timeout、128 故障、未知
+}
+
+const STATE_LABEL = {
+  free: '可用',
+  busy: '使用中',
+  almost: '快好了',
+  offline: '離線',
+};
+
+function ringSvg(pct, colorVar){
+  const r = 28, c = 2 * Math.PI * r;
+  const dash = c * Math.max(0, Math.min(1, pct));
+  return `<svg width="64" height="64" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-opacity="0.15" stroke-width="5"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-width="5"
+      stroke-dasharray="${dash} ${c}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderCard(machine, status){
+  const { state, minutesLeft } = status;
+  const label = STATE_LABEL[state];
+  const sub = state === 'busy' || state === 'almost'
+    ? (minutesLeft > 0 ? `剩 ${minutesLeft} 分` : '使用中')
+    : (state === 'offline' ? '無回應' : '—');
+  const pct = state === 'free' ? 0 : state === 'offline' ? 0 : Math.min(1, minutesLeft / 45);
+  const spinClass = (state === 'busy' || state === 'almost') ? 'spin' : '';
+
+  const el = document.createElement('a');
+  el.className = `card state-${state}`;
+  el.href = PUBLIC_PAGE_URL(machine.id);
+  el.target = '_blank';
+  el.rel = 'noopener';
+  el.innerHTML = `
+    <div class="drum ${spinClass}">
+      ${ringSvg(pct)}
+      <div class="core"></div>
+    </div>
+    <div class="label">${label}</div>
+    <div class="sub">${sub}</div>
+    <div class="name">${machine.name}</div>
+  `;
+  return el;
+}
+
+// 只在狀態或分鐘數變了才換掉該張卡，避免轉動動畫一直重來
+const cardEls = {};
+const cardKeys = {};
+
+function refreshAll(){
+  const grid = document.getElementById('grid');
+  const results = MACHINES.map(m => ({ machine: m, status: computeStatus(m) }));
+
+  results.forEach(({ machine, status }) => {
+    const key = `${status.state}|${status.minutesLeft}`;
+    if (cardKeys[machine.id] === key) return;
+    const el = renderCard(machine, status);
+    if (cardEls[machine.id]) cardEls[machine.id].replaceWith(el);
+    else grid.appendChild(el);
+    cardEls[machine.id] = el;
+    cardKeys[machine.id] = key;
+  });
+
+  const freeN = results.filter(r => r.status.state === 'free').length;
+  document.getElementById('freeCount').textContent = freeN;
+  document.getElementById('freeCount').classList.toggle('zero', freeN === 0);
+  document.getElementById('totalCount').textContent = MACHINES.length;
+  const lastTs = Math.max(0, ...Object.values(heartbeats).map(h => h.ts));
+  document.getElementById('updatedAt').textContent = lastTs
+    ? 'Latest heartbeat ' + new Date(lastTs * 1000).toLocaleTimeString('en-US', { hour12: false })
+    : (connectedAt ? 'Connected, waiting for data…' : 'Connecting…');
+}
+
+const client = mqtt.connect(BROKER_URL);
+client.on('connect', () => {
+  connectedAt = Date.now();
+  MACHINES.forEach(m => client.subscribe(`machine/${m.id}/status/#`));
+  setTimeout(refreshAll, RETAINED_TIMEOUT_MS);
+});
+client.on('message', (topic, payload) => {
+  let data;
+  try { data = JSON.parse(payload.toString()); } catch { return; }
+  if (data?.type !== 'status' || !data.mac) return;
+  const prev = heartbeats[data.mac];
+  if (prev && data.ts < prev.ts) return; // 亂序的舊訊息忽略
+  heartbeats[data.mac] = data;
+});
+client.on('error', (e) => console.warn('MQTT error', e));
+
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('footerNote').innerHTML =
+  `Live data from BEAT Digital Solutions LLC. The display updates every ${RENDER_MS/1000} seconds. <br/>Click a card to open the machine status/payment page.`;
+
+refreshAll();
+setInterval(refreshAll, RENDER_MS);
+</script>
+</body>
+</html>

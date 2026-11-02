@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dorm Laundry Machine Status</title>
+<style>
+  :root{
+    --bg: #EEF3F3;
+    --surface: #FFFFFF;
+    --ink: #16323A;
+    --ink-soft: #5B7278;
+    --line: #D7E1E1;
+    --free: #2F8F7B;
+    --free-bg: #E4F3EF;
+    --busy: #D8635A;
+    --busy-bg: #FBEAE8;
+    --almost: #C98A2C;
+    --almost-bg: #FBF1DF;
+    --offline: #93A3A8;
+    --offline-bg: #EEF1F1;
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Georgia, 'Noto Serif TC', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+    --font-mono: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding: 28px 20px 60px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ margin-bottom: 22px; }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 30px;
+    margin: 0 0 14px;
+    line-height: 1.15;
+  }
+  .hero{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .hero .count{
+    font-family: var(--font-display);
+    font-size: 56px;
+    line-height: 1;
+    color: var(--free);
+  }
+  .hero .count.zero{ color: var(--busy); }
+  .hero .of{
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+  .meta-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .meta-row button{
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .meta-row button:hover{ border-color: var(--ink-soft); }
+  .meta-row button:focus-visible, a:focus-visible{
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  @media (max-width: 560px){
+    .grid{ grid-template-columns: repeat(2, 1fr); }
+    .hero .count{ font-size: 46px; }
+  }
+
+  .card{
+    display:block;
+    text-decoration:none;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 12px 14px;
+    text-align:center;
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .card:hover{ border-color: var(--ink-soft); }
+  .card:active{ transform: scale(0.98); }
+
+  .drum{
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position: relative;
+  }
+  .drum svg{ position:absolute; inset:0; transform: rotate(-90deg); }
+  .drum .core{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .drum .core::before{
+    content:"";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .18;
+  }
+  .drum.spin .core{ animation: spin 3.2s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .drum.spin .core{ animation: none; }
+  }
+
+  .state-free .drum, .state-free .core{ color: var(--free); }
+  .state-free .drum{ background: var(--free-bg); }
+  .state-busy .drum, .state-busy .core{ color: var(--busy); }
+  .state-busy .drum{ background: var(--busy-bg); }
+  .state-almost .drum, .state-almost .core{ color: var(--almost); }
+  .state-almost .drum{ background: var(--almost-bg); }
+  .state-offline .drum, .state-offline .core{ color: var(--offline); }
+  .state-offline .drum{ background: var(--offline-bg); }
+
+  .label{
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .sub{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .name{
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .report{
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--busy);
+  }
+
+  footer{
+    margin-top: 26px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  code{
+    background: var(--offline-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Laundry Machine Status</h1>
+      <p class="eyebrow">Dorm Jen & Shyr</p>
+      <div class="hero">
+        <span class="count" id="freeCount">–</span>
+        <span class="of">/ <span id="totalCount">–</span> Machines Available</span>
+      </div>
+      <div class="meta-row">
+        <span id="updatedAt">Not updated yet</span>
+        <button id="refreshBtn" type="button">Refresh now</button>
+      </div>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <footer id="footerNote"></footer>
+  </div>
+
+<script>
+/* ============================================================
+   v2：資料全部問我們自己的 API server（server/app.py）
+   - 不再自己連 wipepay
+   - 不再自己判斷「可用／使用中／快好了」
+   - 連機台清單都不用存，API 會告訴我們
+   前端只剩一件事：把 JSON 畫出來
+
+   如果 server 有 GET /reports（故障回報），卡片上會多顯示回報內容；
+   還沒做這支 API 的話就略過
+   ============================================================ */
+// 直接用檔案打開時去問 localhost；由 server 送出這個網頁時，就問同一台 server
+const API_URL = location.protocol === 'file:' ? 'http://localhost:3000' : location.origin;
+const REFRESH_MS = 10000;
+
+const STATE_LABEL = {
+  free: '可用',
+  busy: '使用中',
+  almost: '快好了',
+  offline: '離線',
+};
+
+function ringSvg(pct){
+  const r = 28, c = 2 * Math.PI * r;
+  const dash = c * Math.max(0, Math.min(1, pct));
+  return `<svg width="64" height="64" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-opacity="0.15" stroke-width="5"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="currentColor" stroke-width="5"
+      stroke-dasharray="${dash} ${c}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function escapeHtml(text){
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function renderCard(machine, note){
+  const { state, name, url } = machine;
+  const minutesLeft = Math.ceil(machine.timeLeft / 60);
+  const label = STATE_LABEL[state];
+  const sub = state === 'busy' || state === 'almost'
+    ? (minutesLeft > 0 ? `剩 ${minutesLeft} 分` : '使用中')
+    : (state === 'offline' ? '無回應' : '—');
+  const pct = state === 'free' ? 0 : state === 'offline' ? 0 : Math.min(1, minutesLeft / 45);
+  const spinClass = (state === 'busy' || state === 'almost') ? 'spin' : '';
+
+  const el = document.createElement('a');
+  el.className = `card state-${state}`;
+  el.href = url;
+  el.target = '_blank';
+  el.rel = 'noopener';
+  el.innerHTML = `
+    <div class="drum ${spinClass}">
+      ${ringSvg(pct)}
+      <div class="core"></div>
+    </div>
+    <div class="label">${label}</div>
+    <div class="sub">${sub}</div>
+    <div class="name">${name}</div>
+    ${note ? `<div class="report">回報：${escapeHtml(note)}</div>` : ''}
+  `;
+  return el;
+}
+
+// 只在狀態或分鐘數變了才換掉該張卡，避免轉動動畫一直重來
+const cardEls = {};
+const cardKeys = {};
+
+function render(data, reports){
+  // 同一台有好幾筆回報的話，顯示最新的一筆
+  const notes = {};
+  reports.forEach(r => { notes[r.mac] = r.note; });
+
+  const grid = document.getElementById('grid');
+  data.machines.forEach(machine => {
+    const note = notes[machine.mac];
+    const key = `${machine.state}|${Math.ceil(machine.timeLeft / 60)}|${note}`;
+    if (cardKeys[machine.mac] === key) return;
+    const el = renderCard(machine, note);
+    if (cardEls[machine.mac]) cardEls[machine.mac].replaceWith(el);
+    else grid.appendChild(el);
+    cardEls[machine.mac] = el;
+    cardKeys[machine.mac] = key;
+  });
+
+  document.getElementById('freeCount').textContent = data.free;
+  document.getElementById('freeCount').classList.toggle('zero', data.free === 0);
+  document.getElementById('totalCount').textContent = data.total;
+  document.getElementById('updatedAt').textContent =
+    'Updated ' + new Date(data.queriedAt * 1000).toLocaleTimeString('en-US', { hour12: false });
+}
+
+async function fetchReports(){
+  try {
+    const res = await fetch(`${API_URL}/reports`);
+    return res.ok ? await res.json() : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+let loading = false;
+
+async function refreshAll(){
+  if (loading) return; // 上一次還沒回來就不要再問
+  loading = true;
+  try {
+    const res = await fetch(`${API_URL}/status`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    render(await res.json(), await fetchReports());
+  } catch (e) {
+    console.warn('API error', e);
+    document.getElementById('updatedAt').textContent =
+      `Can't reach ${API_URL}. Is app.py running?`;
+  } finally {
+    loading = false;
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('footerNote').innerHTML =
+  `Data from our own API server at <code>${API_URL}/status</code>, refreshed every ${REFRESH_MS/1000} seconds. <br/>Click a card to open the machine status/payment page.`;
+
+refreshAll();
+setInterval(refreshAll, REFRESH_MS);
+</script>
+</body>
+</html>
