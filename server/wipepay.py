@@ -8,8 +8,10 @@
 # wipepay.com.tw 是他們的付款網站兼 MQTT server。
 #
 # 內部做的事（有興趣再看）：
-# 每次呼叫就連一次 wipepay 的 MQTT broker，訂閱機台的 status topic。
-# 這個 topic 是 retained 的，一訂閱就會馬上收到最新一筆；收齊（或逾時）就斷線、回傳結果。
+# 第一次呼叫時，在背景跟 wipepay 的 MQTT broker 開一條長連線，訂閱下面 MACHINES 的 status topic，
+# 之後每收到一筆就更新記憶體裡的最新狀態，供 get_status() 使用。
+# 這樣不管多少人在問我們的 server，對 wipepay 來說都只是一個人開著官方頁面而已。
+# 斷線時 paho 會自己重連；topic 是 retained 的，重新訂閱就會馬上補到最新一筆。
 
 import json
 import threading
@@ -79,7 +81,7 @@ def get_status(macs=None):
     連不上 wipepay 會丟 ConnectionError。
     """
     macs = list(MACHINES) if macs is None else macs
-    heartbeats = _fetch_heartbeats(macs)
+    heartbeats = _latest_heartbeats()
     now = time.time()
     machines = [_describe(mac, heartbeats.get(mac), now) for mac in macs]
     return {
@@ -95,51 +97,73 @@ def _status_main(code):
     return code if code < 0 else (code >> 8) & 0xFF
 
 
-def _fetch_heartbeats(macs):
-    """連 broker 抓這些機台最新的 retained 狀態，回傳 {mac: payload}。"""
-    heartbeats = {}
-    connected = threading.Event()
-    all_received = threading.Event()
-    lock = threading.Lock()
+# ---- 背景長連線 ----
+# 只訂閱 MACHINES 裡的機台：外面傳進來的 mac 不會讓我們去訂閱任意 topic
 
-    def on_connect(client, userdata, flags, reason_code, properties):
-        if reason_code.is_failure:
-            return
-        client.subscribe([(f'machine/{mac}/status/#', 0) for mac in macs])
-        connected.set()
+_heartbeats = {}                 # mac -> 最新一筆 status payload
+_lock = threading.Lock()
+_connected = threading.Event()   # 目前有連著
+_ready = threading.Event()       # 第一批 retained 收齊（或等過 RETAINED_TIMEOUT_S）
+_client = None
+_start_lock = threading.Lock()
 
-    def on_message(client, userdata, msg):
-        try:
-            data = json.loads(msg.payload.decode('utf-8'))
-        except ValueError:
-            return
-        if data.get('type') != 'status' or data.get('mac') not in macs:
-            return
-        with lock:
-            prev = heartbeats.get(data['mac'])
-            if prev is None or data.get('ts', 0) >= prev.get('ts', 0):
-                heartbeats[data['mac']] = data
-            if len(heartbeats) == len(macs):
-                all_received.set()
 
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, transport='websockets')
-    client.ws_set_options(path=BROKER_PATH)
-    client.tls_set()
-    client.on_connect = on_connect
-    client.on_message = on_message
+def _on_connect(client, userdata, flags, reason_code, properties):
+    if reason_code.is_failure:
+        return
+    client.subscribe([(f'machine/{mac}/status/#', 0) for mac in MACHINES])
+    _connected.set()
+    # 從沒上線過的機器不會有 retained 訊息，所以最多等這麼久就當作收齊
+    timer = threading.Timer(RETAINED_TIMEOUT_S, _ready.set)
+    timer.daemon = True
+    timer.start()
 
-    client.connect_async(BROKER_HOST, BROKER_PORT)
-    client.loop_start()
+
+def _on_disconnect(client, userdata, flags, reason_code, properties):
+    _connected.clear()
+
+
+def _on_message(client, userdata, msg):
     try:
-        if not connected.wait(CONNECT_TIMEOUT_S):
-            raise ConnectionError('連不上 wipepay MQTT broker')
-        all_received.wait(RETAINED_TIMEOUT_S)
-    finally:
-        client.disconnect()
-        client.loop_stop()
+        data = json.loads(msg.payload.decode('utf-8'))
+    except ValueError:
+        return
+    if data.get('type') != 'status' or data.get('mac') not in MACHINES:
+        return
+    with _lock:
+        prev = _heartbeats.get(data['mac'])
+        if prev is None or data.get('ts', 0) >= prev.get('ts', 0):
+            _heartbeats[data['mac']] = data
+        if len(_heartbeats) == len(MACHINES):
+            _ready.set()
 
-    with lock:
-        return dict(heartbeats)
+
+def _start():
+    """整個程式只開一次連線；之後重連交給 paho。"""
+    global _client
+    with _start_lock:
+        if _client is not None:
+            return
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, transport='websockets')
+        client.ws_set_options(path=BROKER_PATH)
+        client.tls_set()
+        client.reconnect_delay_set(min_delay=1, max_delay=60)
+        client.on_connect = _on_connect
+        client.on_disconnect = _on_disconnect
+        client.on_message = _on_message
+        client.connect_async(BROKER_HOST, BROKER_PORT)
+        client.loop_start()
+        _client = client
+
+
+def _latest_heartbeats():
+    """回傳記憶體裡的最新狀態 {mac: payload}；第一次呼叫會等連線和第一批資料。"""
+    _start()
+    if not _connected.wait(CONNECT_TIMEOUT_S):
+        raise ConnectionError('連不上 wipepay MQTT broker')
+    _ready.wait(RETAINED_TIMEOUT_S)
+    with _lock:
+        return dict(_heartbeats)
 
 
 def _describe(mac, hb, now):
