@@ -369,7 +369,7 @@ client.on('error', (e) => console.warn('MQTT error', e));
 
 document.getElementById('refreshBtn').addEventListener('click', refreshAll);
 document.getElementById('footerNote').innerHTML =
-  `Live data from BEAT Digital Solutions LLC. The display updates every ${RENDER_MS/1000} seconds. <br/>Click a card to open the machine status/payment page.`;
+  `Live data fetched from wipepay.com.tw (BEAT Digital Solutions LLC). <br/>Unofficial student project. The display updates every ${RENDER_MS/1000} seconds. <br/>Click a card to open the machine status/payment page.`;
 
 refreshAll();
 setInterval(refreshAll, RENDER_MS);
