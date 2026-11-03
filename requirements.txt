@@ -3,3 +3,5 @@ pydantic
 uvicorn
 paho-mqtt>=2
 requests
+discord.py
+python-dotenv

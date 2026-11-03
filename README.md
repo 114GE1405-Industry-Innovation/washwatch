@@ -9,6 +9,7 @@
 | `v2-api/` | query 我們自己的 API server |
 | `server/app.py` | 我們的 API server（FastAPI） |
 | `server/wipepay.py` | 助教給的程式，負責抓洗衣機狀態。當黑盒子用就好 |
+| `bot/bot.py` | Discord bot |
 
 ## 課前準備（Setup）
 
@@ -60,9 +61,12 @@ python app.py
 | v0、v1 | 直接用 Chrome 打開 `v0-toy/index.html`、`v1-direct/index.html` |
 | v2 | **先**跑起 `server/app.py`，再用 Chrome 打開 `v2-api/index.html` |
 | API 文件 | server 跑起來後打開 <http://localhost:3000/docs> |
+| DC bot | 把 `bot/.env.example` 複製成 `bot/.env` 並填好；**先**跑起 `server/app.py`，再開一個 Terminal：`cd bot`、`python bot.py` |
 
 ## 常見問題
 
 - **`python` 找不到** → macOS 請用 `python3`；Windows 安裝 Python 時要勾 *Add python.exe to PATH*。
 - **`address already in use`** → 3000 port 被別的程式佔走了，先關掉另一個還在跑的 `app.py`。
 - **v2 顯示 `Can't reach http://localhost:3000`** → server 沒開，回到第 4 步。
+- **bot 回 `連不上 http://localhost:3000`** → 同上，server 沒開。
+- **`找不到 BOT_TOKEN 或 TEST_GUILD_ID`** → `bot/.env` 不存在或沒填（注意檔名不是 `.env.txt`），或是沒有先 `cd bot` 再執行。
