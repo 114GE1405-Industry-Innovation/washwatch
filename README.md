@@ -10,6 +10,7 @@
 | `server/app.py` | 我們的 API server（FastAPI） |
 | `server/wipepay.py` | 助教給的程式，負責抓洗衣機狀態。當黑盒子用就好 |
 | `bot/bot.py` | Discord bot |
+| `llm/` | call LLM（`hello_llm.py`）、minimal agent（`agent.py`） |
 
 ## 課前準備（Setup）
 
@@ -62,6 +63,7 @@ python app.py
 | v2 | **先**跑起 `server/app.py`，再用 Chrome 打開 `v2-api/index.html` |
 | API 文件 | server 跑起來後打開 <http://localhost:3000/docs> |
 | DC bot | 把 `bot/.env.example` 複製成 `bot/.env` 並填好；**先**跑起 `server/app.py`，再開一個 Terminal：`cd bot`、`python bot.py` |
+| LLM、agent | 把 `llm/.env.example` 複製成 `llm/.env`，填上 Gemini API key；`cd llm`、`python hello_llm.py`。`agent.py` 要**先**跑起 `server/app.py` |
 
 ## 常見問題
 
